@@ -1,0 +1,215 @@
+<!doctype html>
+<html lang="vi">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width,initial-scale=1" />
+<title>Complete all - Demo</title>
+<link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;500;700;800&display=swap" rel="stylesheet">
+<style>
+  :root{ --bg:#f2f4f6; --panel:#ffffff; --muted:#9aa0a6; --green1:#00c853; --green2:#00a86b; --shadow: 0 8px 18px rgba(23,35,42,0.06); }
+  *{box-sizing:border-box}
+  body{ font-family:'Poppins',system-ui,-apple-system,Segoe UI,Roboto,"Helvetica Neue",Arial; background: linear-gradient(180deg,#f7f8f9,#eef1f3); margin:0; padding:48px; display:flex; align-items:center; justify-content:center; min-height:100vh; color:#222; }
+  .card{ width:420px; background:var(--panel); border-radius:28px; padding:36px; box-shadow: 0 12px 30px rgba(15,20,25,0.06); border: 1px solid rgba(0,0,0,0.03); }
+  h1{ margin:0; font-size:40px; font-weight:800; letter-spacing: -0.02em; text-align:center; }
+  p.lead{ margin:10px 0 26px; color:var(--muted); text-align:center; font-size:16px; font-weight:500; }
+  .btns{ display:flex; flex-direction:column; gap:18px; margin-bottom:20px; }
+  .action-btn{ --h:64px; height:var(--h); display:flex; align-items:center; justify-content:space-between; gap:12px; padding:0 22px; border-radius:14px; background: linear-gradient(180deg, rgba(18,189,116,1), rgba(0,160,107,1)); color:white; font-weight:700; font-size:18px; box-shadow: 0 12px 0 rgba(0,0,0,0.07), 0 6px 14px rgba(0,0,0,0.06); border: 3px solid rgba(0,0,0,0.06); cursor:pointer; position:relative; overflow:hidden; transition:transform .12s ease, filter .12s ease; }
+  .action-btn:active{ transform:translateY(1px) }
+  .left-dot{ width:52px;height:52px;border-radius:50%; background: rgba(255,255,255,0.12); display:flex;align-items:center;justify-content:center; margin-right:8px; flex:0 0 52px; box-shadow: inset 0 6px 18px rgba(255,255,255,0.04); }
+  .left-dot .dot{ width:18px;height:18px;border-radius:50%;background:white;opacity:0.95; }
+  .btn-content{ flex:1; display:flex; align-items:center; justify-content:center; }
+  .arrow{ width:24px; height:24px; margin-left:12px; display:flex; align-items:center; justify-content:center; opacity:0.9; }
+  .btn-completed{ background: linear-gradient(180deg,#d8f0e0,#bff0d2); color: #0a4b2f; box-shadow: none; border: 1px solid rgba(10,75,47,0.08); }
+  .btn-disabled{ filter:grayscale(0.25) brightness(0.95); opacity:0.55; cursor:not-allowed; transform:none!important; }
+  .progress-wrap{ margin:6px 12px 18px; text-align:center }
+  .progress-title{ font-weight:700; color:#6b6b6b; font-size:20px; margin-bottom:10px}
+  .progress-bar{ height:14px;background:rgba(0,0,0,0.05); border-radius:10px; overflow:hidden; }
+  .progress-inner{ height:100%; width:0%; background:linear-gradient(90deg,#9be7c7,#3dd59a); transition:width .4s ease;}
+  .final-btn{ margin-top:22px; width:100%; height:64px; border-radius:14px; border:2px solid rgba(0,0,0,0.12); background:linear-gradient(180deg,#f0f0f0,#e6e6e6); color:#fff; font-weight:700; font-size:18px; display:flex; align-items:center; justify-content:center; gap:12px; cursor:not-allowed; color: rgba(255,255,255,0.85); position:relative; }
+  .final-btn.enabled{ background: linear-gradient(180deg,#ffffff,#f3f3f3); cursor:pointer; color:#222; box-shadow: 0 6px 14px rgba(0,0,0,0.06); }
+  .final-btn .lock{ position:absolute; left:18px; opacity:0.35; }
+  .countdown { font-size:14px; margin-left:8px; opacity:0.95; font-weight:600; }
+  @media (max-width:480px){ .card{ width:92%; padding:22px } h1{ font-size:28px } }
+</style>
+</head>
+<body>
+  <div class="card" role="main" aria-labelledby="title">
+    <h1 id="title">Complete all</h1>
+    <p class="lead">See an ad → return here until all is complete!</p>
+
+    <div class="btns" id="btns">
+      <button class="action-btn" data-index="0" id="btn-0" aria-live="polite">
+        <div style="display:flex;align-items:center">
+          <div class="left-dot"><div class="dot"></div></div>
+          <div class="btn-content" id="label-0">Click, wait 10s, then return</div>
+        </div>
+        <div style="display:flex;align-items:center">
+          <div class="countdown" id="cd-0" aria-hidden="true"></div>
+          <svg class="arrow" viewBox="0 0 24 24" fill="none" width="22" height="22" xmlns="http://www.w3.org/2000/svg"><path d="M8 5l8 7-8 7" stroke="#fff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+        </div>
+      </button>
+
+      <button class="action-btn" data-index="1" id="btn-1" aria-live="polite">
+        <div style="display:flex;align-items:center">
+          <div class="left-dot"><div class="dot"></div></div>
+          <div class="btn-content" id="label-1">Click, wait 10s, then return</div>
+        </div>
+        <div style="display:flex;align-items:center">
+          <div class="countdown" id="cd-1" aria-hidden="true"></div>
+          <svg class="arrow" viewBox="0 0 24 24" fill="none" width="22" height="22" xmlns="http://www.w3.org/2000/svg"><path d="M8 5l8 7-8 7" stroke="#fff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+        </div>
+      </button>
+
+      <button class="action-btn" data-index="2" id="btn-2" aria-live="polite">
+        <div style="display:flex;align-items:center">
+          <div class="left-dot"><div class="dot"></div></div>
+          <div class="btn-content" id="label-2">Click, wait 10s, then return</div>
+        </div>
+        <div style="display:flex;align-items:center">
+          <div class="countdown" id="cd-2" aria-hidden="true"></div>
+          <svg class="arrow" viewBox="0 0 24 24" fill="none" width="22" height="22" xmlns="http://www.w3.org/2000/svg"><path d="M8 5l8 7-8 7" stroke="#fff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+        </div>
+      </button>
+    </div>
+
+    <div class="progress-wrap">
+      <div class="progress-title">Unlock Progress <span id="progress-text">0/3</span></div>
+      <div class="progress-bar" aria-hidden="true">
+        <div class="progress-inner" id="progress-inner"></div>
+      </div>
+    </div>
+
+    <button id="final-btn" class="final-btn" aria-disabled="true" title="Click here once finished to get all videos">
+      <svg class="lock" width="20" height="20" viewBox="0 0 24 24" fill="none"><path d="M6 10V8a6 6 0 0112 0v2" stroke="#666" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/><rect x="4" y="10" width="16" height="10" rx="2" stroke="#666" stroke-width="1.6" /></svg>
+      <span id="final-label">Click here once finished to get all videos</span>
+    </button>
+  </div>
+
+<script>
+(function(){
+  const COOLDOWN_SECONDS = 10;
+  const FAILURE_RATE = 0.15;
+  const GOOGLE_BASE = 'https://www.google.com/search?q=ad+variant+';
+  const FINAL_URL = 'https://skibidi.com';
+
+  const LABEL_POOL = [
+    'Click, wait 10s, then return',
+    'Watch ad — wait 10s & comeback',
+    'Tap here, wait 10s, then return',
+    'See an ad → return here until complete',
+    'Open ad, wait 10s, then come back'
+  ];
+
+  const state = [{completed:false,disabled:false},{completed:false,disabled:false},{completed:false,disabled:false}];
+  const intervals = [null,null,null];
+
+  function safeGet(id){ const el = document.getElementById(id); if(!el) console.warn('[complete-all] missing element', id); return el; }
+
+  function assignLabels(){
+    const copy = LABEL_POOL.slice();
+    for(let i=0;i<3;i++){ 
+      const idx = Math.floor(Math.random()*copy.length);
+      const label = copy.splice(idx,1)[0];
+      const el = safeGet('label-'+i);
+      if(el) el.textContent = label;
+    }
+  }
+
+  function updateProgress(){
+    const done = state.filter(s=>s.completed).length;
+    const pct = Math.round((done/3)*100);
+    const pt = safeGet('progress-text');
+    const pi = safeGet('progress-inner');
+    if(pt) pt.textContent = done + '/3';
+    if(pi) pi.style.width = pct + '%';
+    const final = safeGet('final-btn');
+    if(!final) return;
+    if(done === 3){ final.classList.add('enabled'); final.setAttribute('aria-disabled','false'); final.style.cursor = 'pointer'; final.tabIndex = 0; }
+    else { final.classList.remove('enabled'); final.setAttribute('aria-disabled','true'); final.style.cursor = 'not-allowed'; final.tabIndex = -1; }
+  }
+
+  function clearIntervalIfAny(i){ if(intervals[i]){ clearInterval(intervals[i]); intervals[i] = null; } }
+
+  function setButtonAsCompleted(i){
+    const btn = safeGet('btn-'+i);
+    if(btn){ btn.classList.add('btn-completed'); btn.classList.add('btn-disabled'); btn.setAttribute('aria-disabled','true'); }
+    state[i].completed = true; state[i].disabled = true;
+    clearIntervalIfAny(i);
+    const cd = safeGet('cd-'+i); if(cd) cd.textContent = '';
+    updateProgress();
+  }
+
+  function setButtonDisabled(i, disabled){
+    const btn = safeGet('btn-'+i);
+    state[i].disabled = disabled;
+    if(btn){
+      if(disabled){ btn.classList.add('btn-disabled'); btn.setAttribute('aria-disabled','true'); }
+      else { if(!state[i].completed) btn.classList.remove('btn-disabled'); btn.setAttribute('aria-disabled','false'); }
+    }
+  }
+
+  function openGoogleForVariant(i){
+    const labelEl = safeGet('label-'+i);
+    const label = labelEl ? encodeURIComponent(labelEl.textContent.replace(/\s+/g,'+')) : (i+1);
+    const url = GOOGLE_BASE + (i+1) + '+' + label;
+    console.log('[complete-all] open:', url);
+    const w = window.open(url, '_blank');
+    if(!w){ console.warn('[complete-all] popup blocked for', url); return false; }
+    try{ w.focus(); }catch(e){}
+    return true;
+  }
+
+  function onActionClick(e){
+    const btn = e.currentTarget;
+    const i = Number(btn && btn.dataset && btn.dataset.index);
+    if(Number.isNaN(i)) return;
+    if(state[i].completed) return;
+    if(state[i].disabled) return;
+
+    const opened = openGoogleForVariant(i);
+    const cdEl = safeGet('cd-'+i);
+    if(!opened){ if(cdEl) cdEl.textContent = 'Popup blocked — allow popups'; setTimeout(()=>{ if(cdEl) cdEl.textContent = ''; }, 2200); return; }
+
+    setButtonDisabled(i, true);
+    let remaining = COOLDOWN_SECONDS;
+    if(cdEl) cdEl.textContent = remaining + 's';
+
+    clearIntervalIfAny(i);
+    intervals[i] = setInterval(()=>{
+      remaining--;
+      if(remaining > 0){ if(cdEl) cdEl.textContent = remaining + 's'; }
+      else {
+        clearIntervalIfAny(i);
+        if(cdEl) cdEl.textContent = '';
+        const r = Math.random();
+        if(r < FAILURE_RATE){
+          if(cdEl) cdEl.textContent = 'Failed — try again';
+          setTimeout(()=>{ if(cdEl) cdEl.textContent = ''; setButtonDisabled(i, false); }, 900);
+        } else { setButtonAsCompleted(i); }
+      }
+    }, 1000);
+  }
+
+  function attachHandlers(){
+    for(let i=0;i<3;i++){
+      const btn = safeGet('btn-'+i);
+      if(!btn){ console.warn('Button missing', 'btn-'+i); continue; }
+      btn.addEventListener('click', onActionClick);
+    }
+    const finalBtn = safeGet('final-btn');
+    if(finalBtn){
+      finalBtn.addEventListener('click', ()=>{
+        if(!finalBtn.classList.contains('enabled')) return;
+        const w = window.open(FINAL_URL, '_blank');
+        if(!w) alert('Popup blocked — allow popups to open the link.');
+        else try{ w.focus(); }catch(e){}
+      });
+      finalBtn.addEventListener('keydown', (e)=>{ if(e.key === 'Enter' || e.key === ' '){ e.preventDefault(); finalBtn.click(); } });
+    }
+  }
+
+  document.addEventListener('DOMContentLoaded', ()=>{ try{ assignLabels(); attachHandlers(); updateProgress(); console.log('[complete-all] initialized'); } catch(err){ console.error('[complete-all] init error', err); } });
+})();
+</script>
+</body>
+</html>
