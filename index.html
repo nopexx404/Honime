@@ -9,12 +9,12 @@
 
 <style>
 :root{
---bg:#f6f7f8;
+--bg:#f4f5f7;
 --card:#ffffff;
---text:#333;
---muted:#8b8b8b;
---green-1:#07d36b;
---green-2:#03b45a;
+--green:#16c172;
+--green-dark:#0fa15e;
+--text:#222;
+--muted:#777;
 }
 
 body{
@@ -28,70 +28,100 @@ height:100vh;
 }
 
 .card{
-width:90%;
-max-width:500px;
+width:420px;
 background:#fff;
-border-radius:20px;
+border-radius:18px;
 padding:30px;
+box-shadow:0 20px 40px rgba(0,0,0,0.08);
 text-align:center;
 }
 
 .title{
-font-size:40px;
+font-size:38px;
 font-weight:700;
+margin-bottom:10px;
 }
 
 .subtitle{
-color:#888;
-margin-bottom:20px;
+color:var(--muted);
+margin-bottom:25px;
 }
 
 .action{
-height:70px;
-margin:15px 0;
-border-radius:14px;
-background:linear-gradient(180deg,var(--green-1),var(--green-2));
+height:68px;
+margin:14px 0;
+border-radius:12px;
+background:linear-gradient(180deg,var(--green),var(--green-dark));
 display:flex;
 align-items:center;
 justify-content:center;
 color:#fff;
-font-weight:700;
+font-weight:600;
 cursor:pointer;
+transition:0.2s;
+box-shadow:0 6px 0 rgba(0,0,0,0.15);
+}
+
+.action:active{
+transform:translateY(2px);
+box-shadow:0 3px 0 rgba(0,0,0,0.15);
 }
 
 .action.done{
-opacity:.6;
+background:#cfcfcf;
+box-shadow:none;
+cursor:default;
 }
 
 .progress-bar{
 height:10px;
 background:#eee;
-border-radius:10px;
+border-radius:8px;
 overflow:hidden;
+margin-top:10px;
 }
 
 .progress-fill{
 height:100%;
 width:0;
-background:green;
+background:linear-gradient(90deg,#16c172,#0fa15e);
 }
 
 .final{
 margin-top:20px;
 height:60px;
 border-radius:12px;
-background:#ccc;
+background:#ddd;
 display:flex;
 align-items:center;
 justify-content:center;
 color:#fff;
-font-weight:700;
-cursor:not-allowed;
+font-weight:600;
 }
 
 .final.enabled{
-background:green;
+background:linear-gradient(180deg,var(--green),var(--green-dark));
 cursor:pointer;
+}
+
+/* WARNING TOAST */
+.toast{
+position:fixed;
+bottom:30px;
+left:50%;
+transform:translateX(-50%);
+background:#222;
+color:#fff;
+padding:12px 18px;
+border-radius:8px;
+font-size:14px;
+opacity:0;
+transition:0.3s;
+pointer-events:none;
+}
+
+.toast.show{
+opacity:1;
 }
 </style>
 </head>
@@ -101,7 +131,7 @@ cursor:pointer;
 <div class="card">
 
 <h1 class="title">Complete all</h1>
-<p class="subtitle">Click, stay 5s, then return here to continue.</p>
+<p class="subtitle">Click and stay at least 5 seconds before returning.</p>
 
 <div class="action" id="btn-0">Click, stay 5s, then return</div>
 <div class="action" id="btn-1">Click, stay 5s, then return</div>
@@ -113,91 +143,65 @@ cursor:pointer;
 <div id="progress-fill" class="progress-fill"></div>
 </div>
 
-<div id="finalBtn" class="final">Click here once finished</div>
+<div id="finalBtn" class="final">Complete all tasks</div>
 
 </div>
 
+<div id="toast" class="toast"></div>
+
 <script>
 
-// ===== AUTO OPEN CHROME / SAFARI =====
-(function(){
-function isAndroid(){ return /Android/i.test(navigator.userAgent); }
-function isIOS(){ return /iPhone|iPad|iPod/i.test(navigator.userAgent); }
+// ===== TOAST =====
+function showToast(msg){
+const t = document.getElementById("toast");
+t.innerText = msg;
+t.classList.add("show");
 
-if (sessionStorage.getItem("rdr")) return;
-sessionStorage.setItem("rdr","1");
-
-const url = window.location.href;
-
-if (isAndroid()) {
-  const noProto = url.replace(/^https?:\/\//, '');
-  window.location = 'intent://' + noProto + '#Intent;scheme=https;package=com.android.chrome;end';
-  setTimeout(()=>{ window.location.href = url; }, 800);
+setTimeout(()=>{
+t.classList.remove("show");
+},2500);
 }
 
-if (isIOS()) {
-  setTimeout(()=>{ window.location.href = url; }, 300);
-}
-})();
-
-// ===== GEO OFFERS =====
-const OFFERS_BY_GEO = {
-US:["https://your-us-offer"],
-VN:["https://your-vn-offer"],
-DEFAULT:["https://your-global-offer"]
-};
+// ===== CONFIG =====
+const OFFERS = [
+"https://your-link-1",
+"https://your-link-2",
+"https://your-link-3"
+];
 
 const FINAL_LINK = "https://your-best-offer";
 
 // ===== STATE =====
 let states=[false,false,false];
-let usedLinks=[];
 let leaveTime=0;
 let currentTask=null;
-let userCountry="DEFAULT";
-
-// ===== GEO DETECT =====
-fetch("https://ipapi.co/json/")
-.then(r=>r.json())
-.then(d=>userCountry=d.country_code||"DEFAULT")
-.catch(()=>{});
-
-// ===== GET LINK =====
-function getLink(){
-let pool=OFFERS_BY_GEO[userCountry]||OFFERS_BY_GEO.DEFAULT;
-let available=pool.filter(l=>!usedLinks.includes(l));
-
-if(available.length===0){
-usedLinks=[];
-available=pool;
-}
-
-let link=available[Math.floor(Math.random()*available.length)];
-usedLinks.push(link);
-return link;
-}
 
 // ===== CLICK =====
 document.querySelectorAll(".action").forEach((btn,i)=>{
 btn.onclick=()=>{
 if(states[i]) return;
 
-window.open(getLink(),"_blank");
+window.open(OFFERS[i],"_blank");
+
 currentTask=i;
 leaveTime=Date.now();
 };
 });
 
-// ===== CHECK RETURN =====
+// ===== RETURN CHECK =====
 document.addEventListener("visibilitychange",()=>{
 if(document.visibilityState==="visible" && currentTask!==null){
 
-let t=(Date.now()-leaveTime)/1000;
+let timeAway=(Date.now()-leaveTime)/1000;
 
-if(t>=5){
+if(timeAway < 5){
+showToast("Stay at least 5 seconds before returning.");
+return;
+}
+
 startCountdown(currentTask);
 currentTask=null;
-}
+
 }
 });
 
@@ -223,6 +227,7 @@ update();
 // ===== UPDATE =====
 function update(){
 let done=states.filter(x=>x).length;
+
 document.getElementById("progress-text").innerText=done+"/3";
 document.getElementById("progress-fill").style.width=(done/3*100)+"%";
 
