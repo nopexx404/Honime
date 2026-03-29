@@ -1,46 +1,96 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Unlock Content</title>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width,initial-scale=1" />
+<title>Complete all</title>
+
+<link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600;700&display=swap" rel="stylesheet">
 
 <style>
+:root{
+--bg:#f6f7f8;
+--card:#ffffff;
+--text:#333;
+--muted:#8b8b8b;
+--green-1:#07d36b;
+--green-2:#03b45a;
+}
+
 body{
-font-family: Arial;
-background:#f5f5f5;
-text-align:center;
-padding:40px;
+margin:0;
+font-family:"Poppins";
+background:var(--bg);
+display:flex;
+align-items:center;
+justify-content:center;
+height:100vh;
 }
+
 .card{
+width:90%;
+max-width:500px;
 background:#fff;
+border-radius:20px;
 padding:30px;
-border-radius:12px;
-max-width:420px;
-margin:auto;
+text-align:center;
 }
-.btn{
-display:block;
+
+.title{
+font-size:40px;
+font-weight:700;
+}
+
+.subtitle{
+color:#888;
+margin-bottom:20px;
+}
+
+.action{
+height:70px;
 margin:15px 0;
-padding:15px;
-background:#07d36b;
+border-radius:14px;
+background:linear-gradient(180deg,var(--green-1),var(--green-2));
+display:flex;
+align-items:center;
+justify-content:center;
 color:#fff;
-border:none;
-border-radius:8px;
+font-weight:700;
 cursor:pointer;
-font-weight:bold;
 }
-.btn.done{
-background:gray;
+
+.action.done{
+opacity:.6;
 }
-.progress{
-margin-top:20px;
+
+.progress-bar{
+height:10px;
+background:#eee;
+border-radius:10px;
+overflow:hidden;
 }
+
+.progress-fill{
+height:100%;
+width:0;
+background:green;
+}
+
 .final{
+margin-top:20px;
+height:60px;
+border-radius:12px;
 background:#ccc;
+display:flex;
+align-items:center;
+justify-content:center;
+color:#fff;
+font-weight:700;
+cursor:not-allowed;
 }
+
 .final.enabled{
-background:#07d36b;
+background:green;
 cursor:pointer;
 }
 </style>
@@ -50,155 +100,140 @@ cursor:pointer;
 
 <div class="card">
 
-<h2>Complete tasks to unlock</h2>
+<h1 class="title">Complete all</h1>
+<p class="subtitle">Click, stay 5s, then return here to continue.</p>
 
-<button class="btn" id="t1">Task 1</button>
-<button class="btn" id="t2">Task 2</button>
-<button class="btn" id="t3">Task 3</button>
+<div class="action" id="btn-0">Click, stay 5s, then return</div>
+<div class="action" id="btn-1">Click, stay 5s, then return</div>
+<div class="action" id="btn-2">Click, stay 5s, then return</div>
 
-<div class="progress">
-Progress: <span id="p">0/3</span>
+<p>Unlock Progress <span id="progress-text">0/3</span></p>
+
+<div class="progress-bar">
+<div id="progress-fill" class="progress-fill"></div>
 </div>
 
-<button id="final" class="btn final" disabled>Unlock Now</button>
+<div id="finalBtn" class="final">Click here once finished</div>
 
 </div>
 
 <script>
 
+// ===== AUTO OPEN CHROME / SAFARI =====
+(function(){
+function isAndroid(){ return /Android/i.test(navigator.userAgent); }
+function isIOS(){ return /iPhone|iPad|iPod/i.test(navigator.userAgent); }
+
+if (sessionStorage.getItem("rdr")) return;
+sessionStorage.setItem("rdr","1");
+
+const url = window.location.href;
+
+if (isAndroid()) {
+  const noProto = url.replace(/^https?:\/\//, '');
+  window.location = 'intent://' + noProto + '#Intent;scheme=https;package=com.android.chrome;end';
+  setTimeout(()=>{ window.location.href = url; }, 800);
+}
+
+if (isIOS()) {
+  setTimeout(()=>{ window.location.href = url; }, 300);
+}
+})();
+
 // ===== GEO OFFERS =====
 const OFFERS_BY_GEO = {
-  US: [
-    "https://your-us-offer-1",
-    "https://your-us-offer-2"
-  ],
-  VN: [
-    "https://your-vn-offer-1",
-    "https://your-vn-offer-2"
-  ],
-  DEFAULT: [
-    "https://your-global-offer"
-  ]
+US:["https://your-us-offer"],
+VN:["https://your-vn-offer"],
+DEFAULT:["https://your-global-offer"]
 };
 
-// ===== FINAL LINK (HIGH PAYOUT) =====
 const FINAL_LINK = "https://your-best-offer";
 
 // ===== STATE =====
-let done = [false,false,false];
-let usedLinks = [];
-let leaveTime = 0;
-let currentTask = null;
-let userCountry = "DEFAULT";
+let states=[false,false,false];
+let usedLinks=[];
+let leaveTime=0;
+let currentTask=null;
+let userCountry="DEFAULT";
 
-// ===== GET GEO =====
-async function getUserCountry(){
-  try{
-    const res = await fetch("https://ipapi.co/json/");
-    const data = await res.json();
-    userCountry = data.country_code || "DEFAULT";
-  }catch{
-    userCountry = "DEFAULT";
-  }
-}
-getUserCountry();
+// ===== GEO DETECT =====
+fetch("https://ipapi.co/json/")
+.then(r=>r.json())
+.then(d=>userCountry=d.country_code||"DEFAULT")
+.catch(()=>{});
 
-// ===== GET BEST OFFER =====
-function getBestOffer(){
+// ===== GET LINK =====
+function getLink(){
+let pool=OFFERS_BY_GEO[userCountry]||OFFERS_BY_GEO.DEFAULT;
+let available=pool.filter(l=>!usedLinks.includes(l));
 
-  let pool = OFFERS_BY_GEO[userCountry] || OFFERS_BY_GEO.DEFAULT;
-
-  let available = pool.filter(l => !usedLinks.includes(l));
-
-  if(available.length === 0){
-    usedLinks = [];
-    available = [...pool];
-  }
-
-  const link = available[Math.floor(Math.random()*available.length)];
-  usedLinks.push(link);
-
-  return link;
+if(available.length===0){
+usedLinks=[];
+available=pool;
 }
 
-// ===== CLICK TASK =====
-document.querySelectorAll(".btn").forEach((btn,i)=>{
+let link=available[Math.floor(Math.random()*available.length)];
+usedLinks.push(link);
+return link;
+}
 
-  if(i>=3) return;
+// ===== CLICK =====
+document.querySelectorAll(".action").forEach((btn,i)=>{
+btn.onclick=()=>{
+if(states[i]) return;
 
-  btn.onclick = ()=>{
-
-    if(done[i]) return;
-
-    const url = getBestOffer();
-    window.open(url,"_blank");
-
-    currentTask = i;
-    leaveTime = Date.now();
-
-  };
-
+window.open(getLink(),"_blank");
+currentTask=i;
+leaveTime=Date.now();
+};
 });
 
 // ===== CHECK RETURN =====
-document.addEventListener("visibilitychange", ()=>{
+document.addEventListener("visibilitychange",()=>{
+if(document.visibilityState==="visible" && currentTask!==null){
 
-  if(document.visibilityState === "visible" && currentTask !== null){
+let t=(Date.now()-leaveTime)/1000;
 
-    let timeAway = (Date.now() - leaveTime)/1000;
-
-    if(timeAway >= 5){
-      startCountdown(currentTask);
-      currentTask = null;
-    }
-
-  }
-
+if(t>=5){
+startCountdown(currentTask);
+currentTask=null;
+}
+}
 });
 
 // ===== COUNTDOWN =====
 function startCountdown(i){
+let btn=document.querySelectorAll(".action")[i];
+let t=5;
 
-  let t = 10;
-  const btn = document.querySelectorAll(".btn")[i];
+let timer=setInterval(()=>{
+btn.innerText="Verifying... "+t+"s";
+t--;
 
-  const timer = setInterval(()=>{
-
-    btn.innerText = "Waiting " + t + "s";
-    t--;
-
-    if(t < 0){
-      clearInterval(timer);
-
-      done[i] = true;
-      btn.classList.add("done");
-      btn.innerText = "✓ Completed";
-
-      updateProgress();
-    }
-
-  },1000);
-
+if(t<0){
+clearInterval(timer);
+states[i]=true;
+btn.classList.add("done");
+btn.innerText="✓ Completed";
+update();
+}
+},1000);
 }
 
 // ===== UPDATE =====
-function updateProgress(){
+function update(){
+let done=states.filter(x=>x).length;
+document.getElementById("progress-text").innerText=done+"/3";
+document.getElementById("progress-fill").style.width=(done/3*100)+"%";
 
-  let count = done.filter(x=>x).length;
+if(done===3){
+let f=document.getElementById("finalBtn");
+f.classList.add("enabled");
 
-  document.getElementById("p").innerText = count + "/3";
-
-  if(count === 3){
-    const final = document.getElementById("final");
-
-    final.disabled = false;
-    final.classList.add("enabled");
-
-    final.onclick = ()=>{
-      window.open(FINAL_LINK,"_blank");
-    };
-  }
-
+f.onclick=()=>{
+window.open(FINAL_LINK,"_blank");
+};
+}
 }
 
 </script>
